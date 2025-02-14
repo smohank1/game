@@ -1,1 +1,181 @@
-<!doctype html> <html> <head> <title>Marble Game</title> <style> /* (Your CSS styles here) */ </style> </head> <body> <h1>Marble Game</h1> <p style="color: #000; text-align: left;">Whoever gets the last marble/marbles wins! Player 1 to start.</p> <div class="separator"></div> <div id="jar-container"> <div> <p>There are <span id="jar" style="color: #FFA500;">10</span> marbles in the jar:</p> <img src="jar-10.jpg" alt="Jar with marbles" id="jar-image"> </div> <button id="restart-btn">Restart</button> </div> <div class="separator"></div> <p id="message"></p> <div class="player-section"> <div class="player-box" id="player1-box"> <h2>Player 1</h2> <button type="button" id="player1-btn1" data-pick="1">Pick 1</button> <button type="button" id="player1-btn2" data-pick="2">Pick 2</button> </div> <div class="player-box" id="player2-box"> <h2>Player 2</h2> <button type="button" id="player2-btn1" data-pick="1">Pick 1</button> <button type="button" id="player2-btn2" data-pick="2">Pick 2</button> </div> </div> <!-- Include the Socket.IO client library --> <script src="/socket.io/socket.io.js"></script> <script> // Connect to the websocket server const socket = io(); let currentPlayer = 1; let myPlayerNumber = parseInt(prompt("Enter your player number (1 or 2):"), 10); if (![1, 2].includes(myPlayerNumber)) { alert("Invalid input. Defaulting to Player 1."); myPlayerNumber = 1; } const messageEl = document.getElementById("message"); const jarEl = document.getElementById("jar"); const jarImageEl = document.getElementById("jar-image"); const restartBtn = document.getElementById("restart-btn"); const player1Btns = document.querySelectorAll("#player1-box button"); const player2Btns = document.querySelectorAll("#player2-box button"); // Attach event listeners for marble-picking buttons function addListeners(buttons, playerNum) { buttons.forEach(btn => { btn.addEventListener("click", () => { const numMarbles = parseInt(btn.getAttribute("data-pick"), 10); if (playerNum !== currentPlayer) { alert("Not your turn!"); return; } socket.emit('pickMarbles', { player: playerNum, numMarbles }); }); }); } addListeners(player1Btns, 1); addListeners(player2Btns, 2); // Restart button sends a restart event restartBtn.addEventListener("click", () => { socket.emit('restartGame'); }); // Listen for game state updates from the server socket.on("stateUpdate", (data) => { jarEl.textContent = data.jar; jarImageEl.src = `jar-${data.jar}.jpg`; messageEl.textContent = data.message; currentPlayer = data.currentPlayer; updateButtonStatus(); }); // Listen for error messages socket.on("errorMessage", (data) => { alert(data.message); }); // Enable/disable buttons based on whose turn it is function updateButtonStatus() { if (myPlayerNumber === currentPlayer) { if (myPlayerNumber === 1) { player1Btns.forEach(btn => btn.disabled = false); player2Btns.forEach(btn => btn.disabled = true); } else { player2Btns.forEach(btn => btn.disabled = false); player1Btns.forEach(btn => btn.disabled = true); } } else { player1Btns.forEach(btn => btn.disabled = true); player2Btns.forEach(btn => btn.disabled = true); } } </script> </body> </html>
+<!doctype html>
+<html>
+  <head>
+    <title>Marble Game</title>
+    <style>
+      /* Example CSS styles */
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        color: #333;
+        margin-top: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      p {
+        color: #666;
+        margin-bottom: 10px;
+        text-align: left;
+      }
+      .separator {
+        border-top: 2px solid #ccc;
+        margin: 20px 0;
+      }
+      #jar-container {
+        position: relative;
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #jar-image {
+        width: 200px;
+      }
+      #restart-btn {
+        margin-top: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #FF0000;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      .player-section {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+      }
+      .player-box {
+        width: 40%;
+        border: 2px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+      }
+      .player-box h2 {
+        margin-top: 0;
+        color: #333;
+      }
+      .player-box button {
+        padding: 8px 20px;
+        font-size: 16px;
+        margin-top: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      .player-box button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Marble Game</h1>
+    <p style="color: #000; text-align: left;">
+      Whoever gets the last marble/marbles wins! Player 1 to start.
+    </p>
+    <div class="separator"></div>
+    <div id="jar-container">
+      <div>
+        <p>
+          There are <span id="jar" style="color: #FFA500;">10</span> marbles in the jar:
+        </p>
+        <img src="jar-10.jpg" alt="Jar with marbles" id="jar-image">
+      </div>
+      <button id="restart-btn">Restart</button>
+    </div>
+    <div class="separator"></div>
+    <p id="message"></p>
+    <div class="player-section">
+      <div class="player-box" id="player1-box">
+        <h2>Player 1</h2>
+        <button type="button" id="player1-btn1" data-pick="1">Pick 1</button>
+        <button type="button" id="player1-btn2" data-pick="2">Pick 2</button>
+      </div>
+      <div class="player-box" id="player2-box">
+        <h2>Player 2</h2>
+        <button type="button" id="player2-btn1" data-pick="1">Pick 1</button>
+        <button type="button" id="player2-btn2" data-pick="2">Pick 2</button>
+      </div>
+    </div>
+    <!-- Include the Socket.IO client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // Connect to the websocket server
+      const socket = io();
+
+      let currentPlayer = 1;
+      let myPlayerNumber = parseInt(prompt("Enter your player number (1 or 2):"), 10);
+      if (![1, 2].includes(myPlayerNumber)) {
+        alert("Invalid input. Defaulting to Player 1.");
+        myPlayerNumber = 1;
+      }
+
+      const messageEl = document.getElementById("message");
+      const jarEl = document.getElementById("jar");
+      const jarImageEl = document.getElementById("jar-image");
+      const restartBtn = document.getElementById("restart-btn");
+      const player1Btns = document.querySelectorAll("#player1-box button");
+      const player2Btns = document.querySelectorAll("#player2-box button");
+
+      // Attach event listeners for marble-picking buttons
+      function addListeners(buttons, playerNum) {
+        buttons.forEach(btn => {
+          btn.addEventListener("click", () => {
+            const numMarbles = parseInt(btn.getAttribute("data-pick"), 10);
+            if (playerNum !== currentPlayer) {
+              alert("Not your turn!");
+              return;
+            }
+            socket.emit("pickMarbles", { player: playerNum, numMarbles });
+          });
+        });
+      }
+      addListeners(player1Btns, 1);
+      addListeners(player2Btns, 2);
+
+      // Restart button sends a restart event
+      restartBtn.addEventListener("click", () => {
+        socket.emit("restartGame");
+      });
+
+      // Listen for game state updates from the server
+      socket.on("stateUpdate", (data) => {
+        jarEl.textContent = data.jar;
+        jarImageEl.src = `jar-${data.jar}.jpg`;
+        messageEl.textContent = data.message;
+        currentPlayer = data.currentPlayer;
+        updateButtonStatus();
+      });
+
+      // Listen for error messages
+      socket.on("errorMessage", (data) => {
+        alert(data.message);
+      });
+
+      // Enable/disable buttons based on whose turn it is
+      function updateButtonStatus() {
+        if (myPlayerNumber === currentPlayer) {
+          if (myPlayerNumber === 1) {
+            player1Btns.forEach(btn => btn.disabled = false);
+            player2Btns.forEach(btn => btn.disabled = true);
+          } else {
+            player2Btns.forEach(btn => btn.disabled = false);
+            player1Btns.forEach(btn => btn.disabled = true);
+          }
+        } else {
+          player1Btns.forEach(btn => btn.disabled = true);
+          player2Btns.forEach(btn => btn.disabled = true);
+        }
+      }
+    </script>
+  </body>
+</html>
