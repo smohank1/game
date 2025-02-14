@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+    <title>Marble Game</title>
+    <style>
+        /* (Keep the existing styles) */
+    </style>
+</head>
+<body>
+<h1>Marble Game</h1>
+<p style="color: #000; text-align: left;">Whoever gets the last marble/marbles wins! Player 1 to start.</p>
+<div class="separator"></div>
+<div id="jar-container">
+    <div>
+        <p>There are <span id="jar" style="color: #FFA500;">10</span> marbles in the jar:</p>
+        <img src="jar-10.jpg" alt="Jar with marbles" id="jar-image">
+    </div>
+    <button id="restart-btn">Restart</button>
+</div>
+<div class="separator"></div>
+<p id="message"></p>
+<div class="player-section">
+    <div class="player-box" id="player1-box">
+        <h2>Player 1</h2>
+        <button type="button" id="player1-btn1" class="player1-btn">Pick 1</button>
+        <button type="button" id="player1-btn2" class="player1-btn">Pick 2</button>
+    </div>
+    <div class="player-box" id="player2-box">
+        <h2>Player 2</h2>
+        <button type="button" id="player2-btn1" class="player2-btn" disabled>Pick 1</button>
+        <button type="button" id="player2-btn2" class="player2-btn" disabled>Pick 2</button>
+    </div>
+</div>
+
+<script>
+    const ws = new WebSocket('ws://localhost:3000');
+
+    let jar = 10;
+    let currentPlayer = 1;
+
+    const messageEl = document.getElementById("message");
+    const jarEl = document.getElementById("jar");
+    const jarImageEl = document.getElementById("jar-image");
+    const restartBtn = document.getElementById("restart-btn");
+
+    const player1Btn1 = document.getElementById("player1-btn1");
+    const player1Btn2 = document.getElementById("player1-btn2");
+    const player2Btn1 = document.getElementById("player2-btn1");
+    const player2Btn2 = document.getElementById("player2-btn2");
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'init') {
+            jar = data.jar;
+            currentPlayer = data.currentPlayer;
+            updateUI();
+        } else if (data.type === 'update') {
+            jar = data.jar;
+            currentPlayer = data.currentPlayer;
+            updateUI();
+        } else if (data.type === 'gameOver') {
+            messageEl.textContent = `Game over. Player ${data.winner} wins!`;
+            disablePlayerButtons();
+        } else if (data.type === 'restart') {
+            jar = data.jar;
+            currentPlayer = data.currentPlayer;
+            messageEl.textContent = "";
+            updateUI();
+            enablePlayerButtons();
+        } else if (data.type === 'error') {
+            messageEl.textContent = data.message;
+        }
+    };
+
+    player1Btn1.addEventListener("click", () => ws.send(JSON.stringify({ type: 'pick', numMarbles: 1 })));
+    player1Btn2.addEventListener("click", () => ws.send(JSON.stringify({ type: 'pick', numMarbles: 2 })));
+    player2Btn1.addEventListener("click", () => ws.send(JSON.stringify({ type: 'pick', numMarbles: 1 })));
+    player2Btn2.addEventListener("click", () => ws.send(JSON.stringify({ type: 'pick', numMarbles: 2 })));
+    restartBtn.addEventListener("click", () => ws.send(JSON.stringify({ type: 'restart' })));
+
+    function updateUI() {
+        jarEl.textContent = jar;
+        jarImageEl.src = `jar-${jar}.jpg`;
+        updateButtonStatus();
+    }
+
+    function disablePlayerButtons() {
+        player1Btn1.disabled = true;
+        player1Btn2.disabled = true;
+        player2Btn1.disabled = true;
+        player2Btn2.disabled = true;
+    }
+
+    function enablePlayerButtons() {
+        player1Btn1.disabled = false;
+        player1Btn2.disabled = false;
+        player2Btn1.disabled = false;
+        player2Btn2.disabled = false;
+    }
+
+    function updateButtonStatus() {
+        if (currentPlayer === 1) {
+            player1Btn1.disabled = false;
+            player1Btn2.disabled = false;
+            player2Btn1.disabled = true;
+            player2Btn2.disabled = true;
+        } else {
+            player1Btn1.disabled = true;
+            player1Btn2.disabled = true;
+            player2Btn1.disabled = false;
+            player2Btn2.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
